@@ -38,14 +38,18 @@ app.get('/dl', async (req, res) => {
       }
     );
 
-    // Assuming the response contains the URLs for hd and sd
-    const { hd, sd } = response.data; // Assuming response.data contains these fields
-    
-    if (hd && sd) {
+    // Extract media items from the API response
+    const mediaItems = response.data.api.mediaItems;
+
+    // Find the HD (720p) and SD (480p) video URLs
+    const hdVideoUrl = mediaItems.find(item => item.mediaQuality === 'HD')?.mediaUrl;
+    const sdVideoUrl = mediaItems.find(item => item.mediaQuality === 'SD')?.mediaUrl;
+
+    if (hdVideoUrl && sdVideoUrl) {
       res.json({
         Status: 'success',
-        hd: hd, // 720p video URL
-        sd: sd, // SD video URL
+        hd: hdVideoUrl,  // 720p video URL
+        sd: sdVideoUrl,  // 480p video URL
       });
     } else {
       res.status(500).json({
