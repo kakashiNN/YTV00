@@ -1,9 +1,9 @@
-const express = require('express');
-const axios = require('axios');
-const app = express();
+import axios from 'axios';
 
-app.get('/dl', async (req, res) => {
+export default async function handler(req, res) {
   const { url } = req.query;
+
+  // Check if URL is provided
   if (!url) {
     return res.status(400).json({
       status: 'error',
@@ -12,10 +12,11 @@ app.get('/dl', async (req, res) => {
   }
 
   try {
+    // Send the request to ytdown.io proxy
     const response = await axios.post(
       'https://ytdown.io/proxy.php',
       new URLSearchParams({
-        'url': url  // Pass the actual URL here
+        url: url // Pass the actual URL here
       }),
       {
         headers: {
@@ -33,40 +34,36 @@ app.get('/dl', async (req, res) => {
           'sec-fetch-mode': 'cors',
           'sec-fetch-site': 'same-origin',
           'user-agent': 'Mozilla/5.0 (Linux; Android 11; RMX3261) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36',
-          'x-requested-with': 'XMLHttpRequest'
-        }
+          'x-requested-with': 'XMLHttpRequest',
+        },
       }
     );
 
     // Extract media items from the API response
     const mediaItems = response.data.api.mediaItems;
 
-    // Find the HD (720p) and SD (480p) video URLs
+    // Find HD and SD video URLs
     const hdVideoUrl = mediaItems.find(item => item.mediaQuality === 'HD')?.mediaUrl;
     const sdVideoUrl = mediaItems.find(item => item.mediaQuality === 'SD')?.mediaUrl;
 
+    // If HD and SD URLs are found, send them as a response
     if (hdVideoUrl && sdVideoUrl) {
-      res.json({
+      return res.json({
         Status: 'success',
         hd: hdVideoUrl,  // 720p video URL
         sd: sdVideoUrl,  // 480p video URL
       });
     } else {
-      res.status(500).json({
+      return res.status(500).json({
         status: 'error',
         message: 'Failed to fetch video URLs',
       });
     }
-
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Internal server error',
     });
   }
-});
-
-app.listen(3000, () => {
-  console.log("API is running on port 3000");
-});
+}
